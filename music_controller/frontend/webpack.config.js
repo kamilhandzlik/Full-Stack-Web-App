@@ -1,8 +1,8 @@
 const path = require("path");
 const webpack = require("webpack");
 
-module.exports = {
-  entry: "./frontend/src/index.js",
+module.exports = (env, argv) => ({
+  entry: "./src/index.js",
   output: {
     path: path.resolve(__dirname, "./static/frontend"),
     filename: "[name].js",
@@ -19,14 +19,11 @@ module.exports = {
     ],
   },
   optimization: {
-    minimize: true,
+    minimize: argv.mode === "production", // Minimalizacja tylko w trybie produkcji
   },
   plugins: [
     new webpack.DefinePlugin({
-      "process.env": {
-        // This has effect on the react lib size
-        NODE_ENV: JSON.stringify("production"),
-      },
+      "process.env.NODE_ENV": JSON.stringify(argv.mode),
     }),
   ],
-};
+});
