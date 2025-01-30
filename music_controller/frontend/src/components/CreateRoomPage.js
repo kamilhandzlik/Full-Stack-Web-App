@@ -1,20 +1,22 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Nowy sposób na przekierowania
-import Button from "@mui/material/Button";
-import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import FormHelperText from "@mui/material/FormHelperText";
-import FormControl from "@mui/material/FormControl";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
+import {
+  FormControl,
+  FormHelperText,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  Button,
+  Grid,
+  Typography,
+  TextField,
+} from "@mui/material";
 
 export default function RoomJoinPage() {
   const [guestCanPause, setGuestCanPause] = useState(true);
   const [votesToSkip, setVotesToSkip] = useState(2);
-  const navigate = useNavigate(); // Nowa metoda do przekierowań
+  const navigate = useNavigate();
 
   const handleVotesChange = (e) => setVotesToSkip(Number(e.target.value));
   const handleGuestCanPauseChange = (e) =>
