@@ -1,12 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Hook do nawigacji
+import { useNavigate } from "react-router-dom";
 import { TextField, Button, Grid, Typography } from "@mui/material";
 import { Link } from "react-router-dom";
 
 export default function RoomJoinPage() {
   const [roomCode, setRoomCode] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Inicjalizujemy hook do nawigacji
+  const navigate = useNavigate();
 
   const handleTextFieldChange = (e) => setRoomCode(e.target.value);
 
@@ -21,7 +21,7 @@ export default function RoomJoinPage() {
     fetch("/api/join-room", requestOptions)
       .then((response) => {
         if (response.ok) {
-          navigate(`/room/${roomCode}`); // Zamiast push używamy navigate
+          navigate(`/room/${roomCode}`);
         } else {
           setError("Room not found.");
         }
