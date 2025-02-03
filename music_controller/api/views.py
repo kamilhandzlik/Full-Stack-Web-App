@@ -28,7 +28,7 @@ class GetRoom(APIView):
         return Response({'Bad Request': 'Code parameter not found in request'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class JoinRoomiew(APIView):
+class JoinRoomView(APIView):
     lookup_url_kwarg = 'code'
 
     def post(self, request, format=None):

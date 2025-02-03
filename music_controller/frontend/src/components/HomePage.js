@@ -1,48 +1,41 @@
-import React, { Component } from "react";
-import RoomJoinPage from "./RoomJoinPage";
-import CreateRoomPage from "./CreateRoomPage";
+import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
   Route,
+  Link,
   Navigate,
 } from "react-router-dom";
-import { Button, ButtonGroup, Grid, Typography } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Grid, Button, ButtonGroup, Typography } from "@mui/material";
+import RoomJoinPage from "./RoomJoinPage";
+import CreateRoomPage from "./CreateRoomPage";
 import Room from "./Room";
 
-export default class HomePage extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      roomCode: null,
-    };
-  }
+export default function HomePage() {
+  const [roomCode, setRoomCode] = useState(null);
 
-  async componentDidMount() {
-    fetch("api/user-in-room")
+  useEffect(() => {
+    fetch("/api/user-in-room")
       .then((response) => response.json())
-      .then((data) => {
-        this.setState({
-          roomCode: data.code,
-        });
-      });
+      .then((data) => setRoomCode(data.code));
+  }, []);
+
+  function clearRoomCode() {
+    setRoomCode(null);
   }
 
-  renderHomePage() {
+  function renderHomePage() {
     return (
-      <Grid container>
+      <Grid container spacing={3} justifyContent="center" alignItems="center">
         <Grid item xs={12} align="center">
-          <Typography variant="h3" component="h3">
-            House Party
-          </Typography>
+          <Typography variant="h3">House Party</Typography>
         </Grid>
         <Grid item xs={12} align="center">
-          <ButtonGroup disableElevation variant="contained" color="primary">
-            <Button color="secondary" to="/join" component={Link}>
+          <ButtonGroup disableElevation variant="contained">
+            <Button color="primary" component={Link} to="/join">
               Join a Room
             </Button>
-            <Button color="primary" to="/create" component={Link}>
+            <Button color="secondary" component={Link} to="/create">
               Create a Room
             </Button>
           </ButtonGroup>
@@ -51,25 +44,22 @@ export default class HomePage extends Component {
     );
   }
 
-  render() {
-    return (
-      <Router>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              this.state.roomCode ? (
-                <Navigate to={`/room/${this.state.roomCode}`} />
-              ) : (
-                this.renderHomePage()
-              )
-            }
-          />
-          <Route path="/join" element={<RoomJoinPage />} />
-          <Route path="/create" element={<CreateRoomPage />} />
-          <Route path="/room/:roomCode" element={<Room />} />
-        </Routes>
-      </Router>
-    );
-  }
+  return (
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            roomCode ? <Navigate to={`/room/${roomCode}`} /> : renderHomePage()
+          }
+        />
+        <Route path="/join" element={<RoomJoinPage />} />
+        <Route path="/create" element={<CreateRoomPage />} />
+        <Route
+          path="/room/:roomCode"
+          element={<Room leaveRoomCallback={clearRoomCode} />}
+        />
+      </Routes>
+    </Router>
+  );
 }
