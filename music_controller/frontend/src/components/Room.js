@@ -15,14 +15,14 @@ export default function Room() {
       try {
         const response = await fetch(`/api/get-room?code=${roomCode}`);
         if (!response.ok) {
-          throw new Error("Nie udało się pobrać danych pokoju");
+          throw new Error("Failed to load room data");
         }
         const data = await response.json();
         setVotesToSkip(data.votes_to_skip);
         setGuestCanPause(data.guest_can_pause);
         setIsHost(data.is_host);
       } catch (error) {
-        console.error("Błąd:", error);
+        console.error("error:", error);
       }
     };
 
