@@ -11,23 +11,24 @@ const Room = ({ leaveRoomCallback }) => {
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    const getRoomDetails = async () => {
-      try {
-        const response = await fetch(`/api/get-room?code=${roomCode}`);
-        if (!response.ok) {
-          leaveRoomCallback();
-          navigate("/");
-          return;
-        }
-        const data = await response.json();
-        setVotesToSkip(data.votes_to_skip);
-        setGuestCanPause(data.guest_can_pause);
-        setIsHost(data.is_host);
-      } catch (error) {
-        console.error("Failed to fetch room details:", error);
+  const getRoomDetails = async () => {
+    try {
+      const response = await fetch(`/api/get-room?code=${roomCode}`);
+      if (!response.ok) {
+        leaveRoomCallback();
+        navigate("/");
+        return;
       }
-    };
+      const data = await response.json();
+      setVotesToSkip(data.votes_to_skip);
+      setGuestCanPause(data.guest_can_pause);
+      setIsHost(data.is_host);
+    } catch (error) {
+      console.error("Failed to fetch room details:", error);
+    }
+  };
+
+  useEffect(() => {
     getRoomDetails();
   }, [roomCode, leaveRoomCallback, navigate]);
 

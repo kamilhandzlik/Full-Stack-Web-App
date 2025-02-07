@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
 import {
   FormControl,
   FormHelperText,
@@ -11,43 +10,87 @@ import {
   Grid,
   Typography,
   TextField,
+  Alert,
 } from "@mui/material";
 
-export default function RoomJoinPage() {
+export default function CreateRoom({
+  update = false,
+  roomCode = null,
+  updateCallback = () => {},
+}) {
   const [guestCanPause, setGuestCanPause] = useState(true);
   const [votesToSkip, setVotesToSkip] = useState(2);
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const navigate = useNavigate();
 
   const handleVotesChange = (e) => setVotesToSkip(Number(e.target.value));
   const handleGuestCanPauseChange = (e) =>
     setGuestCanPause(e.target.value === "true");
 
-  const handleRoomButtonPressed = () => {
+  const handleRoomAction = async () => {
+    setErrorMsg("");
+    setSuccessMsg("");
+
     const requestOptions = {
-      method: "POST",
+      method: update ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         votes_to_skip: votesToSkip,
         guest_can_pause: guestCanPause,
+        ...(update && { code: roomCode }), // Dodaj kod pokoju tylko dla PATCH
       }),
     };
 
-    fetch("/api/create-room", requestOptions)
-      .then((response) => response.json())
-      .then((data) => navigate(`/room/${data.code}`));
+    try {
+      const response = await fetch(
+        update ? "/api/update-room" : "/api/create-room",
+        requestOptions
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+
+      if (update) {
+        setSuccessMsg("Room updated successfully!");
+        updateCallback(); // Wywołaj callback aktualizacji, jeśli istnieje
+      } else {
+        navigate(`/room/${data.code}`);
+      }
+    } catch (error) {
+      setErrorMsg(
+        `Failed to ${update ? "update" : "create"} room: ${error.message}`
+      );
+    }
   };
 
   return (
     <Grid container spacing={1}>
       <Grid item xs={12} align="center">
         <Typography component="h4" variant="h4">
-          Create A Room
+          {update ? "Update Room" : "Create A Room"}
         </Typography>
       </Grid>
+
+      {errorMsg && (
+        <Grid item xs={12} align="center">
+          <Alert severity="error">{errorMsg}</Alert>
+        </Grid>
+      )}
+
+      {successMsg && (
+        <Grid item xs={12} align="center">
+          <Alert severity="success">{successMsg}</Alert>
+        </Grid>
+      )}
+
       <Grid item xs={12} align="center">
         <FormControl component="fieldset">
           <FormHelperText>Guest Control of Playback State</FormHelperText>
-
           <RadioGroup
             row
             defaultValue="true"
@@ -68,6 +111,7 @@ export default function RoomJoinPage() {
           </RadioGroup>
         </FormControl>
       </Grid>
+
       <Grid item xs={12} align="center">
         <FormControl>
           <TextField
@@ -80,20 +124,28 @@ export default function RoomJoinPage() {
           <FormHelperText>Votes Required To Skip Song</FormHelperText>
         </FormControl>
       </Grid>
+
       <Grid item xs={12} align="center">
         <Button
           color="secondary"
           variant="contained"
-          onClick={handleRoomButtonPressed}
+          onClick={handleRoomAction}
         >
-          Create A Room
+          {update ? "Update Room" : "Create A Room"}
         </Button>
       </Grid>
-      <Grid item xs={12} align="center">
-        <Button color="primary" variant="contained" to="/" component={Link}>
-          Back
-        </Button>
-      </Grid>
+
+      {!update && (
+        <Grid item xs={12} align="center">
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={() => navigate("/")}
+          >
+            Back
+          </Button>
+        </Grid>
+      )}
     </Grid>
   );
 }
