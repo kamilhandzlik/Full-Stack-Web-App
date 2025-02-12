@@ -2,3 +2,4 @@ Django
 django-decouple
 django-extensions
 djangorestframework-3.15.2
+requests

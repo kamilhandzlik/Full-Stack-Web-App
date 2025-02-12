@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "api.apps.ApiConfig",
     "frontend.apps.FrontendConfig",
+    "spotify.apps.SpotifyConfig",
     "rest_framework",
 ]
 
@@ -126,3 +127,8 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+# Configuring Spotify API
+CLIENT_ID = config("CLIENT_ID", default="")
+CLIENT_SECRET = config("CLIENT_SECRET", default="")

@@ -10,6 +10,7 @@ const Room = ({ leaveRoomCallback }) => {
   const [guestCanPause, setGuestCanPause] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
 
   const getRoomDetails = async () => {
     try {
@@ -39,6 +40,27 @@ const Room = ({ leaveRoomCallback }) => {
     });
     leaveRoomCallback();
     navigate("/");
+    useEffect(() => {
+      if (isHost) {
+        authenticateSpotify();
+      }
+    }, [isHost]);
+  };
+
+  const authenticateSpotify = () => {
+    fetch("/spotify/is-authenticated")
+      .then((response) => response.json())
+      .then((data) => {
+        setSpotifyAuthenticated(data.status);
+        if (!data.status) {
+          fetch("/spotify/get-auth-url")
+            .then((response) => response.json())
+            .then((data) => {
+              window.location.replace(data.url);
+            });
+        }
+      })
+      .catch((error) => console.error("Error authenticating Spotify:", error));
   };
 
   const renderSettings = () => (
