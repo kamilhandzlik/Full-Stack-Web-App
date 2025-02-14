@@ -12,6 +12,16 @@ const Room = ({ leaveRoomCallback }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
 
+  useEffect(() => {
+    getRoomDetails();
+  }, [roomCode]);
+
+  useEffect(() => {
+    if (isHost) {
+      authenticateSpotify();
+    }
+  }, [isHost]);
+
   const getRoomDetails = async () => {
     try {
       const response = await fetch(`/api/get-room?code=${roomCode}`);
@@ -29,10 +39,6 @@ const Room = ({ leaveRoomCallback }) => {
     }
   };
 
-  useEffect(() => {
-    getRoomDetails();
-  }, [roomCode, leaveRoomCallback, navigate]);
-
   const leaveButtonPressed = async () => {
     await fetch("/api/leave-room", {
       method: "POST",
@@ -40,27 +46,26 @@ const Room = ({ leaveRoomCallback }) => {
     });
     leaveRoomCallback();
     navigate("/");
-    useEffect(() => {
-      if (isHost) {
-        authenticateSpotify();
-      }
-    }, [isHost]);
   };
 
-  const authenticateSpotify = () => {
-    fetch("/spotify/is-authenticated")
-      .then((response) => response.json())
-      .then((data) => {
-        setSpotifyAuthenticated(data.status);
-        if (!data.status) {
-          fetch("/spotify/get-auth-url")
-            .then((response) => response.json())
-            .then((data) => {
-              window.location.replace(data.url);
-            });
-        }
-      })
-      .catch((error) => console.error("Error authenticating Spotify:", error));
+  const authenticateSpotify = async () => {
+    try {
+      console.log("Sprawdzanie autoryzacji Spotify...");
+      const response = await fetch("/spotify/is-authenticated");
+      const data = await response.json();
+      console.log("Spotify Authenticated:", data.status);
+      setSpotifyAuthenticated(data.status);
+
+      if (!data.status) {
+        console.log("Brak autoryzacji, pobieram URL...");
+        const authResponse = await fetch("/spotify/get-auth-url");
+        const authData = await authResponse.json();
+        console.log("Auth URL:", authData.url);
+        window.location.href = authData.url;
+      }
+    } catch (error) {
+      console.error("Błąd autoryzacji Spotify:", error);
+    }
   };
 
   const renderSettings = () => (

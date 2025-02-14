@@ -132,3 +132,4 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Configuring Spotify API
 CLIENT_ID = config("CLIENT_ID", default="")
 CLIENT_SECRET = config("CLIENT_SECRET", default="")
+REDIRECT_URI = config("REDIRECT_URI", default="")

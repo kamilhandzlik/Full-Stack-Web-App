@@ -9,7 +9,7 @@ from .util import update_or_create_user_tokens, is_spotify_authenticated
 
 class AuthURL(APIView):
     def get(self, request, format=None):
-        scopes = "user-read-playback-state user-modify-playback-state user-read-curremtly-playing"
+        scopes = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
         REDIRECT_URI = config("REDIRECT_URI")
         CLIENT_ID = config("CLIENT_ID")
         url = (
@@ -36,9 +36,10 @@ def spotify_callback(request, format=None):
     REDIRECT_URI = config("REDIRECT_URI")
     CLIENT_ID = config("CLIENT_ID")
     CLIENT_SECRET = config("CLIENT_SECRET")
+    
 
     response = post(
-    "https://accounts.spotify.com/api/token",
+        "https://accounts.spotify.com/api/token",
         data={
             "grant_type": "authorization_code",
             "code": code,
@@ -54,6 +55,9 @@ def spotify_callback(request, format=None):
     expires_in = response.get("expires_in")
     error = response.get("error")
 
+    if not expires_in: 
+        expires_in = 3600 
+
     if not request.session.exists(request.session.session_key):
         request.session.create()
 
@@ -67,4 +71,4 @@ def spotify_callback(request, format=None):
 class IsAuthenticated(APIView):
     def get(self, request, format=None):
         is_authenticated = is_spotify_authenticated(self.request.session.session_key)
-        return Response({'status': is_authenticated}, status=status.HTTP_200_OK)
+        return Response({"status": is_authenticated}, status=status.HTTP_200_OK)

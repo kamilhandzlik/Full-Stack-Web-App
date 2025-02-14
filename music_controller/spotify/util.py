@@ -16,13 +16,16 @@ def get_user_tokens(session_id):
 def update_or_create_user_tokens(
     session_id, access_token, token_type, expires_in, refresh_token
 ):
+    if expires_in is None:
+        expires_in = 3600
+
     tokens = get_user_tokens(session_id)
-    expires_in = timezone.now() + timedelta(seconds=expires_in)
+    expires_at = timezone.now() + timedelta(seconds=expires_in)
 
     if tokens:
         tokens.access_token = access_token
         tokens.token_type = token_type
-        tokens.expires_in = expires_in
+        tokens.expires_in = expires_at
         tokens.refresh_token = refresh_token
         tokens.save(update_fields=["access_token", "token_type", "expires_in", "refresh_token"])
     else:
