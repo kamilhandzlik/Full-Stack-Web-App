@@ -2,25 +2,24 @@ import React, { useState, useEffect } from "react";
 import { Grid, Button, Typography } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import CreateRoomPage from "./CreateRoomPage";
+import MusicPlayer from "./MusicPlayer";
 
 const Room = ({ leaveRoomCallback }) => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
+
   const [votesToSkip, setVotesToSkip] = useState(2);
   const [guestCanPause, setGuestCanPause] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [spotifyAuthenticated, setSpotifyAuthenticated] = useState(false);
+  const [song, setSong] = useState({});
 
   useEffect(() => {
     getRoomDetails();
-  }, [roomCode]);
-
-  useEffect(() => {
-    if (isHost) {
-      authenticateSpotify();
-    }
-  }, [isHost]);
+    const interval = setInterval(getCurrentSong, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getRoomDetails = async () => {
     try {
@@ -34,37 +33,48 @@ const Room = ({ leaveRoomCallback }) => {
       setVotesToSkip(data.votes_to_skip);
       setGuestCanPause(data.guest_can_pause);
       setIsHost(data.is_host);
+      if (data.is_host) authenticateSpotify();
     } catch (error) {
-      console.error("Failed to fetch room details:", error);
+      console.error("Error fetching room details:", error);
     }
-  };
-
-  const leaveButtonPressed = async () => {
-    await fetch("/api/leave-room", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    leaveRoomCallback();
-    navigate("/");
   };
 
   const authenticateSpotify = async () => {
     try {
-      console.log("Sprawdzanie autoryzacji Spotify...");
       const response = await fetch("/spotify/is-authenticated");
       const data = await response.json();
-      console.log("Spotify Authenticated:", data.status);
       setSpotifyAuthenticated(data.status);
-
       if (!data.status) {
-        console.log("Brak autoryzacji, pobieram URL...");
         const authResponse = await fetch("/spotify/get-auth-url");
         const authData = await authResponse.json();
-        console.log("Auth URL:", authData.url);
-        window.location.href = authData.url;
+        window.location.replace(authData.url);
       }
     } catch (error) {
-      console.error("Błąd autoryzacji Spotify:", error);
+      console.error("Error authenticating Spotify:", error);
+    }
+  };
+
+  const getCurrentSong = async () => {
+    try {
+      const response = await fetch("/spotify/current-song");
+      if (!response.ok) return;
+      const data = await response.json();
+      setSong(data);
+    } catch (error) {
+      console.error("Error fetching current song:", error);
+    }
+  };
+
+  const leaveButtonPressed = async () => {
+    try {
+      await fetch("/api/leave-room", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      leaveRoomCallback();
+      navigate("/");
+    } catch (error) {
+      console.error("Error leaving room:", error);
     }
   };
 
@@ -76,7 +86,7 @@ const Room = ({ leaveRoomCallback }) => {
           votesToSkip={votesToSkip}
           guestCanPause={guestCanPause}
           roomCode={roomCode}
-          updateCallback={() => getRoomDetails()}
+          updateCallback={getRoomDetails}
         />
       </Grid>
       <Grid item xs={12} align="center">
@@ -96,25 +106,9 @@ const Room = ({ leaveRoomCallback }) => {
   ) : (
     <Grid container spacing={1}>
       <Grid item xs={12} align="center">
-        <Typography variant="h4" component="h4">
-          Code: {roomCode}
-        </Typography>
+        <Typography variant="h4">Code: {roomCode}</Typography>
       </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Votes: {votesToSkip}
-        </Typography>
-      </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Guest Can Pause: {guestCanPause.toString()}
-        </Typography>
-      </Grid>
-      <Grid item xs={12} align="center">
-        <Typography variant="h6" component="h6">
-          Host: {isHost.toString()}
-        </Typography>
-      </Grid>
+      <MusicPlayer {...song} />
       {isHost && (
         <Grid item xs={12} align="center">
           <Button
