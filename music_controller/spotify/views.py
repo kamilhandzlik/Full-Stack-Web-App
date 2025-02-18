@@ -61,6 +61,7 @@ def spotify_callback(request, format=None):
     if not request.session.exists(request.session.session_key):
         request.session.create()
 
+ 
     update_or_create_user_tokens(
         request.session.session_key, access_token, token_type, expires_in, refresh_token
     )
@@ -68,56 +69,49 @@ def spotify_callback(request, format=None):
     return redirect("frontend:")
 
 
+
 class IsAuthenticated(APIView):
     def get(self, request, format=None):
-        is_authenticated = is_spotify_authenticated(self.request.session.session_key)
-        return Response({"status": is_authenticated}, status=status.HTTP_200_OK)
+        auth_response = is_spotify_authenticated(self.request.session.session_key)
 
+        if isinstance(auth_response, dict) and "error" in auth_response:
+            return Response(auth_response, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"status": True}, status=status.HTTP_200_OK)
 
 class CurrentSong(APIView):
     def get(self, request, format=None):
         room_code = self.request.session.get("room_code")
-        room = Room.objects.filter(code=room_code)
+        room = Room.objects.filter(code=room_code).first()
 
-        if room.exists():
-            room = room[0]
-        else:
+        if not room:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
 
         host = room.host
+        access_token = ensure_valid_token(host)
+
+        if not access_token:
+            return Response({"error": "Brak ważnego tokena Spotify"}, status=status.HTTP_401_UNAUTHORIZED)
+
         endpoint = "player/currently-playing"
-        response = execute_spotify_api_request(host, endpoint)
+        headers = {"Authorization": f"Bearer {access_token}"}
+        response = get(f"https://api.spotify.com/v1/{endpoint}", headers=headers).json()
 
-        if "error" in response or not response or "item" not in response:
-            return Response(
-                {"error": "No song is currently playing"},
-                status=status.HTTP_204_NO_CONTENT,
-            )
+        if "error" in response:
+            return Response({"error": response["error"]["message"]}, status=response["error"]["status"])
 
-        item = response.get("item")
-        duration = item.get("duration_ms")
-        progress = response.get("progress_ms")
-        album_cover = item.get("album").get("images")[0].get("url")
-        is_playing = response.get("is_playing")
-        song_id = item.get("id")
+        if "item" not in response:
+            return Response({"error": "Brak aktywnego utworu"}, status=status.HTTP_204_NO_CONTENT)
 
-        artist_string = ""
-
-        for i, artist in enumerate(item.get("artists")):
-            if i > 0:
-                artist_string += ", "
-            name = artist.get("name")
-            artist_string += name
-
+        item = response["item"]
         song = {
-            "title": item.get("name"),
-            "artist": artist_string,
-            "duration": duration,
-            "time": progress,
-            "image_url": album_cover,
-            "is_playing": is_playing,
-            "votes": 0,
-            "id": song_id,
+            "title": item["name"],
+            "artist": ", ".join(artist["name"] for artist in item["artists"]),
+            "duration": item["duration_ms"],
+            "time": response.get("progress_ms", 0),
+            "image_url": item["album"]["images"][0]["url"],
+            "is_playing": response.get("is_playing", False),
+            "id": item["id"],
         }
 
         return Response(song, status=status.HTTP_200_OK)
