@@ -81,37 +81,49 @@ class IsAuthenticated(APIView):
 
 class CurrentSong(APIView):
     def get(self, request, format=None):
-        room_code = self.request.session.get("room_code")
-        room = Room.objects.filter(code=room_code).first()
-
-        if not room:
+        room_code = self.request.session.get('room_code')
+        room = Room.objects.filter(code=room_code)
+        if room.exists():
+            room = room[0]
+        else:
             return Response({}, status=status.HTTP_404_NOT_FOUND)
-
         host = room.host
         access_token = ensure_valid_token(host)
-
         if not access_token:
-            return Response({"error": "Brak ważnego tokena Spotify"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Brak ważnego tokena Spotify"}, status=status.HTTP_401_UNAUTHORIZED) # TODO pamiętaj żeby zmienić a angielski
 
+        print(f"Access Token: {access_token}") # TODO Pamiętaj żeby usunąć!!
+        
         endpoint = "player/currently-playing"
-        headers = {"Authorization": f"Bearer {access_token}"}
-        response = get(f"https://api.spotify.com/v1/{endpoint}", headers=headers).json()
+        response = execute_spotify_api_request(host, endpoint)
 
-        if "error" in response:
-            return Response({"error": response["error"]["message"]}, status=response["error"]["status"])
+        if 'error' in response or 'item' not in response:
+            return Response({}, status=status.HTTP_204_NO_CONTENT)
 
-        if "item" not in response:
-            return Response({"error": "Brak aktywnego utworu"}, status=status.HTTP_204_NO_CONTENT)
+        item = response.get('item')
+        duration = item.get('duration_ms')
+        progress = response.get('progress_ms')
+        album_cover = item.get('album').get('images')[0].get('url')
+        is_playing = response.get('is_playing')
+        song_id = item.get('id')
 
-        item = response["item"]
+        artist_string = ""
+
+        for i, artist in enumerate(item.get('artists')):
+            if i > 0:
+                artist_string += ", "
+            name = artist.get('name')
+            artist_string += name
+
         song = {
-            "title": item["name"],
-            "artist": ", ".join(artist["name"] for artist in item["artists"]),
-            "duration": item["duration_ms"],
-            "time": response.get("progress_ms", 0),
-            "image_url": item["album"]["images"][0]["url"],
-            "is_playing": response.get("is_playing", False),
-            "id": item["id"],
+            'title': item.get('name'),
+            'artist': artist_string,
+            'duration': duration,
+            'time': progress,
+            'image_url': album_cover,
+            'is_playing': is_playing,
+            'votes': 0,
+            'id': song_id
         }
 
         return Response(song, status=status.HTTP_200_OK)

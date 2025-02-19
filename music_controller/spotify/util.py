@@ -53,7 +53,7 @@ def is_spotify_authenticated(session_id):
             refresh_spotify_token(session_id)
 
         if not tokens.refresh_token:
-            return {"error": "Brak refresh_token, proszę zalogować się ponownie."}
+            return {"error": "Brak refresh_token, proszę zalogować się ponownie."}  # TODO pamiętaj żeby zmienić a angielski
         
 
         return True
@@ -65,11 +65,10 @@ def refresh_spotify_token(session_id):
     tokens = get_user_tokens(session_id)
 
     if not tokens or not tokens.refresh_token:
-        print(f"Brak refresh_token dla użytkownika: {session_id}")
-        # Jeśli brak refresh_token, przekaż błąd do frontu, aby użytkownik ponownie się zalogował
-        return {"error": "Brak refresh_token, proszę zalogować się ponownie."}
+        print(f"Brak refresh_token dla użytkownika: {session_id}")  # TODO pamiętaj żeby zmienić a angielski
+        return {"error": "Brak refresh_token, proszę zalogować się ponownie."}  # TODO pamiętaj żeby zmienić a angielski
 
-    print(f"Refresh token przed odświeżeniem: {tokens.refresh_token}")
+    print(f"Refresh token przed odświeżeniem: {tokens.refresh_token}")  # TODO pamiętaj żeby zusunąć
 
     refresh_token = tokens.refresh_token
     CLIENT_ID = config("CLIENT_ID")
@@ -88,26 +87,26 @@ def refresh_spotify_token(session_id):
     print("Spotify API Response:", response)
 
     if "error" in response:
-        print(f"Błąd podczas odświeżania tokena: {response}")
-        return {"error": f"Błąd podczas odświeżania tokena: {response}"}
+        print(f"Błąd podczas odświeżania tokena: {response}")  # TODO pamiętaj żeby zmienić a angielski
+        return {"error": f"Błąd podczas odświeżania tokena: {response}"}  # TODO pamiętaj żeby zmienić a angielski
 
     access_token = response.get("access_token")
     token_type = response.get("token_type")
     expires_in = response.get("expires_in")
     new_refresh_token = response.get("refresh_token", refresh_token)  
 
-    print(f"Nowy access_token: {access_token}")
-    print(f"Nowy refresh_token: {new_refresh_token}")
+    print(f"Nowy access_token: {access_token}")   # TODO pamiętaj żeby usunąć
+    print(f"Nowy refresh_token: {new_refresh_token}")    # TODO pamiętaj żeby usunąć
 
     if not access_token:
-        print("Nie udało się odświeżyć tokena!")
-        return {"error": "Nie udało się odświeżyć tokena!"}
+        print("Nie udało się odświeżyć tokena!")     # TODO pamiętaj żeby zmienić a angielski
+        return {"error": "Nie udało się odświeżyć tokena!"}    # TODO pamiętaj żeby zmienić a angielski
 
     update_or_create_user_tokens(
         session_id, access_token, token_type, expires_in, new_refresh_token
     )
     
-    print("Tokeny zaktualizowane w bazie")
+    print("Tokeny zaktualizowane w bazie")    # TODO pamiętaj żeby usunąć
     return {"access_token": access_token}
 
 
@@ -130,7 +129,7 @@ def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
     else:
         response = get(BASE_URL + endpoint, headers=header)
 
-    print("🔍 Spotify API Response:", response.status_code, response.text)  # 👈 DEBUG
+    # print("Spotify API Response:", response.status_code, response.text)  # 👈 DEBUG
 
     try:
         return response.json()
