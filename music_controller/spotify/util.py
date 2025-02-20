@@ -129,7 +129,7 @@ def execute_spotify_api_request(session_id, endpoint, post_=False, put_=False):
     else:
         response = get(BASE_URL + endpoint, headers=header)
 
-    # print("Spotify API Response:", response.status_code, response.text)  # 👈 DEBUG
+    # print("Spotify API Response:", response.status_code, response.text)  #  TODO Usunąć
 
     try:
         return response.json()
@@ -156,3 +156,11 @@ def ensure_valid_token(host):
             return None
 
     return tokens.access_token
+
+
+def play_song(session_id):
+    return execute_spotify_api_request(session_id, 'player/play', put_=True)
+
+
+def pause_song(sesion_id):
+    return execute_spotify_api_request(sesion_id, 'player/pause', put_=True)
