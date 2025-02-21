@@ -132,17 +132,30 @@ class CurrentSong(APIView):
 class PauseSong(APIView):
     def put(self, request, format=None):
         room_code = self.request.session.get('room_code')
-        room = Room.objects.filter(code=room_code)[0]
+        if not room_code:
+            return Response({"error": "Room code not found in session"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            room = Room.objects.get(code=room_code)
+        except Room.DoesNotExist:
+            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+
         if self.request.session.session_key == room.host or room.guest_can_pause:
-            pause_song(room.host)
+            print(f"Pausing song for host: {room.host}")
+            response = pause_song(room.host)
+            print("Spotify API response:", response)  # LOGOWANIE odpowiedzi od Spotify
             return Response({}, status=status.HTTP_204_NO_CONTENT)
 
         return Response({}, status=status.HTTP_403_FORBIDDEN)
 
 
+
 class PlaySong(APIView):
     def put(self, request, format=None):
         room_code = self.request.session.get('room_code')
+        if not room_code:
+            return Response({"error": "Room code not found in session"}, status=status.HTTP_400_BAD_REQUEST)
+        
         room = Room.objects.filter(code=room_code)[0]
         if self.request.session.session_key == room.host or room.guest_can_pause:
             play_song(room.host)
